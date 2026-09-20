@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: api
+  datasource:
+    url: jdbc:mysql://localhost:3306/mainichi?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: mainichi_user
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    # 스키마는 Flyway가 관리하므로 Hibernate는 검증만 한다.
+    # 프로토타입 단계에서 빠르게 스키마를 바꿔가며 실험하고 싶다면 update로 바꾸고 flyway는 잠시 꺼도 된다.
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+#  flyway:
+#    enabled: true
+#    locations: classpath:db/migration
+
+jwt:
+  # 운영에서는 반드시 환경변수로 주입할 것 (32바이트 이상 랜덤 문자열 권장) 보안 문제
+  secret: ${JWT_SECRET:dev-only-secret-please-change-me-before-deploy}
+  access-token-validity-seconds: 3600
+
+logging:
+  level:
+    org.hibernate.SQL: debug
