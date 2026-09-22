@@ -25,7 +25,7 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest
     ){
-        AuthService.LoginResult result = authService.login(request.provider(), request.socialToken(), deviceInfo(httpRequest));
+        AuthService.LoginResult result = authService.login(request.provider(), request.code(), deviceInfo(httpRequest));
         return ResponseEntity.ok(toLoginResponse(result));
     }
 

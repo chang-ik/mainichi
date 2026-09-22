@@ -26,6 +26,13 @@ jwt:
   secret: ${JWT_SECRET:dev-only-secret-please-change-me-before-deploy}
   access-token-validity-seconds: 3600
 
+kakao:
+  client-id: ${KAKAO_CLIENT_ID}
+  # 카카오 콘솔에서 Client Secret을 켰다면 필수, 끄면 비워둬도 된다.
+  client-secret: ${KAKAO_CLIENT_SECRET:}
+  # 카카오 콘솔에 등록한 Redirect URI와 프론트가 로그인 요청에 쓴 값이 모두 이것과 완전히 같아야 한다.
+  redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:5173/auth/kakao/callback}
+
 logging:
   level:
     org.hibernate.SQL: debug

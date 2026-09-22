@@ -93,6 +93,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("login: 신규 유저면 토큰을 발급하고 refresh token을 해시로 저장한다")
     void loginNewUser() throws Exception {
+        when(kakaoOAuthService.exchangeCodeForAccessToken("auth-code")).thenReturn("kakao-token");
         when(kakaoOAuthService.fetchProfile("kakao-token"))
                 .thenReturn(new KakaoOAuthService.KakaoProfile("12345", "user@example.com"));
         when(userService.findOrCreateBySocialId("kakao", "12345", "user@example.com"))
@@ -100,7 +101,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.createAccessToken(userId)).thenReturn("access-token");
         when(jwtTokenProvider.getAccessTokenValiditySeconds()).thenReturn(3600L);
 
-        AuthService.LoginResult result = authService.login("kakao", "kakao-token", "Mozilla/5.0");
+        AuthService.LoginResult result = authService.login("kakao", "auth-code", "Mozilla/5.0");
 
         assertEquals("access-token", result.accessToken());
         assertEquals(3600L, result.expiresIn());
@@ -126,6 +127,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("login: 기존 유저면 isNewUser가 false")
     void loginExistingUser() {
+        when(kakaoOAuthService.exchangeCodeForAccessToken("auth-code")).thenReturn("kakao-token");
         when(kakaoOAuthService.fetchProfile("kakao-token"))
                 .thenReturn(new KakaoOAuthService.KakaoProfile("12345", "user@example.com"));
         when(userService.findOrCreateBySocialId("kakao", "12345", "user@example.com"))
@@ -133,7 +135,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.createAccessToken(userId)).thenReturn("access-token");
         when(jwtTokenProvider.getAccessTokenValiditySeconds()).thenReturn(3600L);
 
-        AuthService.LoginResult result = authService.login("kakao", "kakao-token", "device");
+        AuthService.LoginResult result = authService.login("kakao", "auth-code", "device");
 
         assertFalse(result.isNewUser());
     }
@@ -141,6 +143,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("login: 로그인할 때마다 서로 다른 refresh token이 발급된다")
     void loginTokensAreUnique() {
+        when(kakaoOAuthService.exchangeCodeForAccessToken("auth-code")).thenReturn("kakao-token");
         when(kakaoOAuthService.fetchProfile("kakao-token"))
                 .thenReturn(new KakaoOAuthService.KakaoProfile("12345", null));
         when(userService.findOrCreateBySocialId("kakao", "12345", null))
@@ -148,19 +151,32 @@ class AuthServiceTest {
         when(jwtTokenProvider.createAccessToken(userId)).thenReturn("access-token");
         when(jwtTokenProvider.getAccessTokenValiditySeconds()).thenReturn(3600L);
 
-        String first = authService.login("kakao", "kakao-token", "device").refreshToken();
-        String second = authService.login("kakao", "kakao-token", "device").refreshToken();
+        String first = authService.login("kakao", "auth-code", "device").refreshToken();
+        String second = authService.login("kakao", "auth-code", "device").refreshToken();
 
         assertNotEquals(first, second);
     }
 
     @Test
-    @DisplayName("login: 카카오 토큰 검증에 실패하면 예외가 전파되고 아무것도 저장하지 않는다")
+    @DisplayName("login: 인가 코드 교환에 실패하면 예외가 전파되고 프로필 조회나 저장을 하지 않는다")
+    void loginInvalidAuthorizationCode() {
+        when(kakaoOAuthService.exchangeCodeForAccessToken("bad-code")).thenThrow(new InvalidSocialTokenException());
+
+        assertThrows(InvalidSocialTokenException.class,
+                () -> authService.login("kakao", "bad-code", "device"));
+
+        verify(kakaoOAuthService, never()).fetchProfile(any());
+        verifyNoInteractions(userService, refreshTokenRepository);
+    }
+
+    @Test
+    @DisplayName("login: 카카오 프로필 조회에 실패하면 예외가 전파되고 아무것도 저장하지 않는다")
     void loginInvalidSocialToken() {
+        when(kakaoOAuthService.exchangeCodeForAccessToken("auth-code")).thenReturn("bad-token");
         when(kakaoOAuthService.fetchProfile("bad-token")).thenThrow(new InvalidSocialTokenException());
 
         assertThrows(InvalidSocialTokenException.class,
-                () -> authService.login("kakao", "bad-token", "device"));
+                () -> authService.login("kakao", "auth-code", "device"));
 
         verifyNoInteractions(userService, refreshTokenRepository);
     }

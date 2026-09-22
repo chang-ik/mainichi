@@ -52,14 +52,14 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /auth/login: 성공하면 200과 토큰, 유저 요약을 반환한다")
     void loginSuccess() throws Exception {
-        when(authService.login(eq("kakao"), eq("kakao-token"), any()))
+        when(authService.login(eq("kakao"), eq("auth-code"), any()))
                 .thenReturn(new AuthService.LoginResult("access", "refresh", 3600L, true, user));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("User-Agent", "JUnit-Agent")
                         .content("""
-                                {"provider": "kakao", "socialToken": "kakao-token"}
+                                {"provider": "kakao", "code": "auth-code"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("access"))
@@ -74,7 +74,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.user.timezone").value("Asia/Seoul"));
 
         // User-Agent 헤더가 deviceInfo로 전달된다.
-        verify(authService).login("kakao", "kakao-token", "JUnit-Agent");
+        verify(authService).login("kakao", "auth-code", "JUnit-Agent");
     }
 
     @Test
@@ -85,7 +85,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"provider": "google", "socialToken": "token"}
+                                {"provider": "google", "code": "code"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("UNSUPPORTED_PROVIDER"))
@@ -93,14 +93,14 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("POST /auth/login: 소셜 토큰이 유효하지 않으면 401 INVALID_SOCIAL_TOKEN")
+    @DisplayName("POST /auth/login: 인가 코드가 유효하지 않으면 401 INVALID_SOCIAL_TOKEN")
     void loginInvalidSocialToken() throws Exception {
         when(authService.login(eq("kakao"), eq("bad"), any())).thenThrow(new InvalidSocialTokenException());
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"provider": "kakao", "socialToken": "bad"}
+                                {"provider": "kakao", "code": "bad"}
                                 """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.code").value("INVALID_SOCIAL_TOKEN"));
@@ -112,7 +112,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"provider": "", "socialToken": "token"}
+                                {"provider": "", "code": "code"}
                                 """))
                 .andExpect(status().isBadRequest());
 
@@ -120,8 +120,8 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("POST /auth/login: socialToken이 없으면 400")
-    void loginMissingSocialToken() throws Exception {
+    @DisplayName("POST /auth/login: code가 없으면 400")
+    void loginMissingCode() throws Exception {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

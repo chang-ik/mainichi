@@ -37,12 +37,13 @@ public class AuthService {
     ){}
 
     @Transactional
-    public LoginResult login(String provider, String socialAccessToken, String deviceInfo){
+    public LoginResult login(String provider, String authorizationCode, String deviceInfo){
         //현재는 kakao 로그인만 지원하므로 kakao가 아니면 에러. 추후 구글 추가되면 수정 필
         if (!"kakao".equals(provider)) {
             throw new UnsupportedProviderException();
         }
 
+        String socialAccessToken = kakaoOAuthService.exchangeCodeForAccessToken(authorizationCode);
         KakaoOAuthService.KakaoProfile profile = kakaoOAuthService.fetchProfile(socialAccessToken);
 
         UserService.FindOrCreateResult result = userService.findOrCreateBySocialId(
