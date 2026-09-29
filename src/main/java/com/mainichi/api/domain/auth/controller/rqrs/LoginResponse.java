@@ -2,7 +2,6 @@ package com.mainichi.api.domain.auth.controller.rqrs;
 
 public record LoginResponse(
         String accessToken,
-        String refreshToken,
         String tokenType,
         long expiresIn,
         boolean isNewUser,

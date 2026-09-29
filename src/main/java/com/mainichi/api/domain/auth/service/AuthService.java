@@ -21,7 +21,7 @@ import java.util.Base64;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private static final long REFRESH_TOKEN_VALIDITY_DAYS = 30;
+    public static final long REFRESH_TOKEN_VALIDITY_DAYS = 30;
 
     private final UserService userService;
     private final KakaoOAuthService kakaoOAuthService;

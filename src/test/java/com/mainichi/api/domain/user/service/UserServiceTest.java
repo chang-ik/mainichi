@@ -1,11 +1,14 @@
 package com.mainichi.api.domain.user.service;
 
+import com.mainichi.api.domain.auth.repository.RefreshTokenRepository;
 import com.mainichi.api.domain.user.entity.User;
+import com.mainichi.api.domain.user.exception.UserNotFoundException;
 import com.mainichi.api.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +32,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
 
     @InjectMocks
     private UserService userService;
@@ -94,7 +101,7 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         when(userRepository.findById(id)).thenReturn(Optional.empty());
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> userService.getById(id));
+        UserNotFoundException e = assertThrows(UserNotFoundException.class, () -> userService.getById(id));
 
         assertEquals("USER_NOT_FOUND", e.getMessage());
     }
@@ -118,16 +125,18 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         when(userRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> userService.updateProfile(id, "닉네임", null));
+        assertThrows(UserNotFoundException.class, () -> userService.updateProfile(id, "닉네임", null));
     }
 
     @Test
-    @DisplayName("deleteAccount는 유저를 삭제한다")
+    @DisplayName("deleteAccount는 FK 제약을 피하려고 리프레시 토큰을 먼저 지운 뒤 유저를 삭제한다")
     void deleteAccount() {
         UUID id = UUID.randomUUID();
 
         userService.deleteAccount(id);
 
-        verify(userRepository).deleteById(id);
+        InOrder inOrder = inOrder(refreshTokenRepository, userRepository);
+        inOrder.verify(refreshTokenRepository).deleteAllByUserId(id);
+        inOrder.verify(userRepository).deleteById(id);
     }
 }

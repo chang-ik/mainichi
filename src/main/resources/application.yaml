@@ -26,6 +26,13 @@ jwt:
   secret: ${JWT_SECRET:dev-only-secret-please-change-me-before-deploy}
   access-token-validity-seconds: 3600
 
+auth:
+  refresh-cookie:
+    # HTTPS 에서만 전송. 브라우저는 http://localhost 를 예외로 허용하므로 로컬 개발에서도 true 로 동작한다.
+    secure: ${REFRESH_COOKIE_SECURE:true}
+    # 프론트와 API 가 같은 사이트(eTLD+1)여야 쿠키가 전송된다. 서로 다른 도메인에 배포하면 None 으로 바꿔야 한다.
+    same-site: ${REFRESH_COOKIE_SAME_SITE:Strict}
+
 kakao:
   client-id: ${KAKAO_CLIENT_ID}
   # 카카오 콘솔에서 Client Secret을 켰다면 필수, 끄면 비워둬도 된다.

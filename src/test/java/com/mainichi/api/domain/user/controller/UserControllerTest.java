@@ -1,11 +1,15 @@
 package com.mainichi.api.domain.user.controller;
 
+import com.mainichi.api.domain.auth.controller.RefreshTokenCookieProvider;
 import com.mainichi.api.domain.user.entity.User;
+import com.mainichi.api.domain.user.exception.UserNotFoundException;
 import com.mainichi.api.domain.user.service.UserService;
+import com.mainichi.api.global.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +21,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -25,6 +30,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,8 +44,10 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+        mockMvc = MockMvcBuilders.standaloneSetup(
+                        new UserController(userService, new RefreshTokenCookieProvider(true, "Strict")))
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
 
         userId = UUID.randomUUID();
@@ -68,6 +76,28 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.provider").value("kakao"))
                 .andExpect(jsonPath("$.currentLevel").value(0))
                 .andExpect(jsonPath("$.timezone").value("Asia/Seoul"));
+    }
+
+    @Test
+    @DisplayName("GET /user/me: 탈퇴 등으로 유저가 없으면 404 USER_NOT_FOUND")
+    void meUserNotFound() throws Exception {
+        when(userService.getById(userId)).thenThrow(new UserNotFoundException());
+
+        mockMvc.perform(get("/user/me"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("USER_NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("PATCH /user/me: 본문이 JSON 이 아니면 400 INVALID_REQUEST")
+    void updateMeMalformedBody() throws Exception {
+        mockMvc.perform(patch("/user/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{nickname"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+
+        verifyNoInteractions(userService);
     }
 
     @Test
@@ -100,7 +130,8 @@ class UserControllerTest {
                         .content("""
                                 {"nickname": "a"}
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
 
         verifyNoInteractions(userService);
     }
@@ -117,10 +148,13 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /user/me: 204를 반환하고 계정을 삭제한다")
+    @DisplayName("DELETE /user/me: 204를 반환하고 계정을 삭제하며 리프레시 토큰 쿠키를 지운다")
     void deleteMe() throws Exception {
         mockMvc.perform(delete("/user/me"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent())
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("refreshToken=;")))
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")))
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Path=/auth")));
 
         verify(userService).deleteAccount(userId);
     }

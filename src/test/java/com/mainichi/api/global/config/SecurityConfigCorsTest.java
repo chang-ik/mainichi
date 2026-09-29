@@ -1,5 +1,6 @@
 package com.mainichi.api.global.config;
 
+import com.mainichi.api.domain.auth.controller.RefreshTokenCookieProvider;
 import com.mainichi.api.domain.user.controller.UserController;
 import com.mainichi.api.domain.user.service.UserService;
 import com.mainichi.api.global.common.JwtTokenProvider;
@@ -30,6 +31,9 @@ class SecurityConfigCorsTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @Test
     @DisplayName("프리플라이트: 허용된 origin 은 인증 없이도 통과하고 CORS 헤더를 받는다")

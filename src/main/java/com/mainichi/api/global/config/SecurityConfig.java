@@ -31,6 +31,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 인증 불필요 (API 문서 기준)
                         .requestMatchers("/auth/login", "/auth/refresh").permitAll()
+                        // 예외 발생 시 서블릿이 /error 로 다시 디스패치하는데, 그때는 JWT 필터가 돌지 않아 익명 요청이 된다.
+                        // 막아두면 400/500 이 전부 403 으로 바뀌므로 열어둔다.
+                        .requestMatchers("/error").permitAll()
                         // 그 외는 전부 Bearer 인증 필요 (/auth/logout 포함)
                         .anyRequest().authenticated()
                 )
@@ -48,6 +51,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        // 리프레시 토큰 쿠키를 주고받으려면 필요 (프론트는 credentials: 'include' 로 요청)
+        config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
