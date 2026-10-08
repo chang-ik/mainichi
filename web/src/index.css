@@ -158,6 +158,19 @@ button:disabled {
   background: var(--surface-alt);
   color: var(--ink);
 }
+.pill.dark {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: 500;
+}
+.pill.dark:hover {
+  background: var(--ink-2);
+}
+.pill-level {
+  margin-left: 6px;
+  opacity: 0.75;
+}
 
 .field {
   display: flex;
@@ -425,6 +438,155 @@ button:disabled {
   border: none;
   border-top: 1px solid var(--border);
 }
+/* ---------- 학습 변경 (단계 선택) ---------- */
+.level-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.level-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+.level-option:hover:not(:disabled) {
+  background: var(--surface-alt);
+}
+.level-option.selected {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+.level-option.selected:hover:not(:disabled) {
+  background: var(--ink-2);
+}
+.level-desc {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.75;
+}
+/* 학습 영역 · 하루 학습량 */
+.setting-label {
+  margin: 22px 0 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.area-option {
+  justify-content: flex-start;
+  padding: 0 14px;
+}
+.area-glyph {
+  font-family: var(--font-serif);
+  font-size: 19px;
+}
+.area-name {
+  font-size: 14px;
+}
+.goal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.goal-input {
+  width: 90px;
+  height: 46px;
+  text-align: center;
+}
+.goal-unit {
+  font-size: 14px;
+  color: var(--muted);
+}
+.goal-default {
+  padding: 3px 9px;
+  border: none;
+  border-radius: 99px;
+  background: var(--surface-alt);
+  font-size: 12px;
+  color: var(--muted);
+}
+.goal-default.active {
+  background: #e9e2d3;
+  color: var(--ink-2);
+}
+.goal-hint {
+  margin: 10px 0 18px;
+}
+
+/* 무엇을 학습할까요? */
+.picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  transition: background 0.2s ease;
+}
+.picker-item:hover:not(:disabled) {
+  background: var(--surface-alt);
+}
+.picker-item:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.picker-item .area-glyph {
+  font-size: 22px;
+  color: var(--ink-2);
+}
+.picker-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.picker-name {
+  font-size: 15px;
+  font-weight: 500;
+}
+.picker-desc {
+  font-size: 12px;
+  color: var(--muted);
+}
+.picker-badge {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: rgba(30, 27, 22, 0.08);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.picker-close {
+  height: 46px;
+  margin-top: 16px;
+}
+
+@media (max-width: 360px) {
+  .level-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .danger-zone {
   display: flex;
   flex-direction: column;
@@ -460,4 +622,359 @@ button:disabled {
   color: var(--surface);
   font-size: 14px;
   animation: fadeUp 0.25s ease both;
+}
+
+/* ---------- 허브: 열린 카드 ---------- */
+.card.primary:not(:disabled) {
+  transition: background 0.2s ease;
+}
+.card.primary:not(:disabled):hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+/* ---------- 단어 학습 ---------- */
+.study {
+  min-height: 100vh;
+  padding: 0 20px 88px;
+  animation: fadeUp 0.35s ease both;
+}
+.study-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.study-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 26px 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+.study-back,
+.study-logo {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--ink);
+  font-family: var(--font-logo);
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+.study-back {
+  justify-self: start;
+  font-size: 32px;
+}
+.study-logo {
+  font-size: 34px;
+  letter-spacing: 0.08em;
+}
+.study-back:hover,
+.study-logo:hover {
+  color: var(--accent);
+}
+.study-nick {
+  justify-self: end;
+  font-family: var(--font-logo);
+  font-size: 20px;
+  font-weight: 700;
+}
+.study-panel {
+  margin-top: 24px;
+  padding: 26px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.study-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.study-eyebrow {
+  margin: 0 0 7px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+.study-top h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.3;
+}
+.study-progress-label {
+  margin: 0 0 0 auto;
+  font-size: 15px;
+  color: var(--muted);
+}
+.progress {
+  height: 6px;
+  margin-top: 18px;
+  border-radius: 99px;
+  background: #ede7d9;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width 0.45s ease;
+}
+.study-counts {
+  display: flex;
+  gap: 14px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.study-counts .new {
+  color: #3c6fb0;
+}
+.study-counts .learning {
+  color: var(--accent);
+}
+.study-counts .review {
+  color: #4e9e52;
+}
+.study-loading {
+  padding: 60px 0;
+}
+
+/* 카드 뒤집기 */
+.flip {
+  margin-top: 22px;
+  perspective: 1400px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.flip:focus-visible {
+  outline-offset: 4px;
+  border-radius: 14px;
+}
+.flip-inner {
+  position: relative;
+  min-height: 300px;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  border-radius: 14px;
+}
+.face.front {
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+}
+.face.back {
+  transform: rotateY(180deg);
+  border: 1px solid var(--accent);
+  background: var(--surface);
+}
+.phase-tag {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.flip-hint {
+  position: absolute;
+  bottom: 14px;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.8;
+}
+.word-wrap {
+  position: relative;
+}
+.reading-peek {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  font-family: var(--font-serif);
+  font-size: 22px;
+}
+.word {
+  font-family: var(--font-serif);
+  font-size: clamp(44px, 14vw, 72px);
+  line-height: 1;
+  font-weight: 600;
+  text-align: center;
+}
+.face.back .reading {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  color: var(--ink-2);
+}
+/* 문법 카드: 문형이 길어서 앞면 글자를 줄이고, 뒷면에 문형·접속을 함께 보여 준다 */
+.flip-inner.grammar {
+  min-height: 340px;
+}
+.word.pattern {
+  font-size: clamp(30px, 8vw, 46px);
+  line-height: 1.3;
+}
+.pattern-back {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  color: var(--ink-2);
+  text-align: center;
+}
+.usage {
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: var(--surface-alt);
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+.face.back .meaning {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+}
+.example {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  max-width: 340px;
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid #ede7d9;
+  text-align: center;
+}
+.example-jp {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 2;
+}
+.example-ko {
+  font-size: 13px;
+  color: var(--muted);
+}
+ruby {
+  ruby-position: over;
+}
+rt {
+  font-size: 0.6em;
+  opacity: 0.75;
+}
+
+/* 평가 버튼 ✕ △ ○ ◎ */
+.grades {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+}
+.grade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 64px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
+}
+.grade .mark {
+  font-size: 22px;
+  line-height: 1;
+}
+.grade .grade-sub {
+  font-size: 11px;
+  color: var(--muted);
+}
+.grade.again .mark {
+  color: var(--accent-dark);
+}
+.grade.hard .mark {
+  color: var(--ink-2);
+}
+.grade.good {
+  border-color: var(--accent);
+}
+.grade.good .mark {
+  color: var(--accent);
+}
+.grade.easy {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.grade.easy .mark,
+.grade.easy .grade-sub {
+  color: var(--surface);
+}
+.grade:hover:not(:disabled) {
+  background: var(--accent-tint);
+}
+.grade.hard:hover:not(:disabled) {
+  background: var(--surface-alt);
+}
+.grade.easy:hover:not(:disabled) {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+.grade:disabled {
+  opacity: 0.4;
+}
+.study-hint {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.study-done {
+  margin-top: 22px;
+  padding: 32px 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-alt);
+  text-align: center;
+}
+.study-done .otsukare {
+  margin: 0 0 10px;
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 600;
+}
+.study-done .sub {
+  margin: 0 0 22px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+@media (max-width: 480px) {
+  .study-panel {
+    padding: 18px;
+  }
+  /* 좁은 화면에선 간격만 (라벨은 버튼 title 로) */
+  .grade .grade-label {
+    display: none;
+  }
 }

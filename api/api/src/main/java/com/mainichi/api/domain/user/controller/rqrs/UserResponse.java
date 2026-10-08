@@ -1,7 +1,10 @@
 package com.mainichi.api.domain.user.controller.rqrs;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mainichi.api.domain.user.entity.StudyArea;
 import com.mainichi.api.domain.user.entity.User;
+
+import java.util.List;
 
 public record UserResponse(
         String id,
@@ -9,7 +12,8 @@ public record UserResponse(
         String email,
         String provider,
         Integer currentLevel,
-        String timezone
+        String timezone,
+        List<StudyArea> studyAreas
 ) {
     public static UserResponse from(User user){
         return new UserResponse(
@@ -18,7 +22,8 @@ public record UserResponse(
                 user.getEmail(),
                 user.getProvider(),
                 user.getCurrentLevel(),
-                user.getTimezone()
+                user.getTimezone(),
+                List.copyOf(user.getStudyAreas())
         );
     }
 }

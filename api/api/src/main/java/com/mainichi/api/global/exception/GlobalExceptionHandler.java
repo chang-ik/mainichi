@@ -4,6 +4,8 @@ package com.mainichi.api.global.exception;
 import com.mainichi.api.domain.auth.exception.InvalidRefreshTokenException;
 import com.mainichi.api.domain.auth.exception.InvalidSocialTokenException;
 import com.mainichi.api.domain.auth.exception.UnsupportedProviderException;
+import com.mainichi.api.domain.study.exception.CardNotFoundException;
+import com.mainichi.api.domain.study.exception.StudyKindNotFoundException;
 import com.mainichi.api.domain.user.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +39,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleUserNotFound() {
         return error(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+    }
+
+    @ExceptionHandler(CardNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleCardNotFound() {
+        return error(HttpStatus.NOT_FOUND, "CARD_NOT_FOUND", "카드를 찾을 수 없습니다.");
+    }
+
+    @ExceptionHandler(StudyKindNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleStudyKindNotFound() {
+        return error(HttpStatus.NOT_FOUND, "STUDY_KIND_NOT_FOUND", "지원하지 않는 학습 종류입니다.");
     }
 
     // 여기서 처리하지 않으면 /error 로 넘어가 공통 포맷이 아닌 응답이 나간다.

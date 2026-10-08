@@ -6,6 +6,7 @@ import { HubPage } from './pages/HubPage';
 import { KakaoCallbackPage } from './pages/KakaoCallbackPage';
 import { LoginPage } from './pages/LoginPage';
 import { NicknameSetupPage } from './pages/NicknameSetupPage';
+import { StudyPage } from './pages/StudyPage';
 
 /** 로그인한 사용자만 통과. 닉네임이 없는 신규 가입자는 닉네임 설정으로 보낸다. */
 function RequireAuth({ needsNickname = true }: { needsNickname?: boolean }) {
@@ -32,6 +33,8 @@ export default function App() {
 
             <Route element={<RequireAuth />}>
               <Route path="/" element={<HubPage />} />
+              <Route path="/study" element={<StudyPage key="words" kind="words" />} />
+              <Route path="/study/grammar" element={<StudyPage key="grammar" kind="grammar" />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

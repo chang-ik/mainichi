@@ -30,7 +30,8 @@ public class UserController {
     public ResponseEntity<UserResponse> updateme(
             @AuthenticationPrincipal UUID userId, @Valid @RequestBody UpdateProfileRequest request
     ){
-        userService.updateProfile(userId, request.nickname(), request.timezone());
+        userService.updateProfile(userId, request.nickname(), request.timezone(), request.currentLevel(),
+                request.studyAreas());
         return ResponseEntity.ok(UserResponse.from(userService.getById(userId)));
     }
 

@@ -106,9 +106,9 @@ class UserControllerTest {
         when(userService.getById(userId)).thenReturn(user);
         // 서비스 대신 실제 엔티티 동작을 재현한다.
         org.mockito.Mockito.doAnswer(inv -> {
-            user.updateProfile(inv.getArgument(1), inv.getArgument(2));
+            user.updateProfile(inv.getArgument(1), inv.getArgument(2), inv.getArgument(3));
             return null;
-        }).when(userService).updateProfile(any(), any(), any());
+        }).when(userService).updateProfile(any(), any(), any(), any(), any());
 
         mockMvc.perform(patch("/user/me")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -119,7 +119,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.nickname").value("마이니치"))
                 .andExpect(jsonPath("$.timezone").value("Asia/Tokyo"));
 
-        verify(userService).updateProfile(userId, "마이니치", "Asia/Tokyo");
+        verify(userService).updateProfile(userId, "마이니치", "Asia/Tokyo", null, null);
     }
 
     @Test
@@ -143,6 +143,66 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nickname\": \"" + "a".repeat(21) + "\"}"))
                 .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    @DisplayName("PATCH /user/me: 학습 단계를 바꾸면 바뀐 단계를 반환한다")
+    void updateMeLevel() throws Exception {
+        when(userService.getById(userId)).thenReturn(user);
+        org.mockito.Mockito.doAnswer(inv -> {
+            user.updateProfile(inv.getArgument(1), inv.getArgument(2), inv.getArgument(3));
+            return null;
+        }).when(userService).updateProfile(any(), any(), any(), any(), any());
+
+        mockMvc.perform(patch("/user/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentLevel\": 3}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentLevel").value(3));
+
+        verify(userService).updateProfile(userId, null, null, 3, null);
+    }
+
+    @Test
+    @DisplayName("PATCH /user/me: 학습 단계가 0~5 밖이면 400")
+    void updateMeLevelOutOfRange() throws Exception {
+        mockMvc.perform(patch("/user/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentLevel\": 6}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    @DisplayName("PATCH /user/me: 학습 영역을 바꾸면 단어를 포함한 영역 목록을 반환한다")
+    void updateMeStudyAreas() throws Exception {
+        when(userService.getById(userId)).thenReturn(user);
+        org.mockito.Mockito.doAnswer(inv -> {
+            user.changeStudyAreas(inv.getArgument(4));
+            return null;
+        }).when(userService).updateProfile(any(), any(), any(), any(), any());
+
+        mockMvc.perform(patch("/user/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"studyAreas\": [\"LISTENING\", \"GRAMMAR\"]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.studyAreas[0]").value("WORD"))
+                .andExpect(jsonPath("$.studyAreas[1]").value("GRAMMAR"))
+                .andExpect(jsonPath("$.studyAreas[2]").value("LISTENING"));
+    }
+
+    @Test
+    @DisplayName("PATCH /user/me: 없는 학습 영역이면 400")
+    void updateMeUnknownStudyArea() throws Exception {
+        mockMvc.perform(patch("/user/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"studyAreas\": [\"MUSIC\"]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
 
         verifyNoInteractions(userService);
     }

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { authApi } from '../api/auth';
 import { onSessionExpired, refreshTokens } from '../api/http';
-import type { LoginResponse, User } from '../api/types';
+import type { LoginResponse, UpdateProfileRequest, User } from '../api/types';
 import { userApi } from '../api/user';
 import { tokenStorage } from './tokenStorage';
 
@@ -13,7 +13,7 @@ interface AuthContextValue {
   /** 카카오 인가 코드로 로그인 */
   loginWithKakaoCode: (code: string) => Promise<LoginResponse>;
   logout: () => Promise<void>;
-  updateProfile: (input: { nickname?: string; timezone?: string }) => Promise<void>;
+  updateProfile: (input: UpdateProfileRequest) => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
 
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('anonymous');
   }, []);
 
-  const updateProfile = useCallback(async (input: { nickname?: string; timezone?: string }) => {
+  const updateProfile = useCallback(async (input: UpdateProfileRequest) => {
     setUser(await userApi.update(input));
   }, []);
 

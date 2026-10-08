@@ -1,6 +1,10 @@
 package com.mainichi.api.domain.user.service;
 
 import com.mainichi.api.domain.auth.repository.RefreshTokenRepository;
+import com.mainichi.api.domain.study.repository.CardStateRepository;
+import com.mainichi.api.domain.study.repository.ReviewLogRepository;
+import com.mainichi.api.domain.study.repository.UserFsrsParamRepository;
+import com.mainichi.api.domain.user.entity.StudyArea;
 import com.mainichi.api.domain.user.entity.User;
 import com.mainichi.api.domain.user.exception.UserNotFoundException;
 import com.mainichi.api.domain.user.repository.UserRepository;
@@ -14,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,6 +40,15 @@ class UserServiceTest {
 
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
+    private ReviewLogRepository reviewLogRepository;
+
+    @Mock
+    private CardStateRepository cardStateRepository;
+
+    @Mock
+    private UserFsrsParamRepository userFsrsParamRepository;
 
     @InjectMocks
     private UserService userService;
@@ -113,10 +127,12 @@ class UserServiceTest {
         User user = newUser();
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
 
-        userService.updateProfile(id, "마이니치", "Asia/Tokyo");
+        userService.updateProfile(id, "마이니치", "Asia/Tokyo", 3, Set.of(StudyArea.READING));
 
         assertEquals("마이니치", user.getNickname());
         assertEquals("Asia/Tokyo", user.getTimezone());
+        assertEquals(3, user.getCurrentLevel());
+        assertEquals(Set.of(StudyArea.WORD, StudyArea.READING), user.getStudyAreas());
     }
 
     @Test
@@ -125,18 +141,22 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         when(userRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(UserNotFoundException.class, () -> userService.updateProfile(id, "닉네임", null));
+        assertThrows(UserNotFoundException.class, () -> userService.updateProfile(id, "닉네임", null, null, null));
     }
 
     @Test
-    @DisplayName("deleteAccount는 FK 제약을 피하려고 리프레시 토큰을 먼저 지운 뒤 유저를 삭제한다")
+    @DisplayName("deleteAccount는 FK 제약을 피하려고 리프레시 토큰·학습 기록을 먼저 지운 뒤 유저를 삭제한다")
     void deleteAccount() {
         UUID id = UUID.randomUUID();
 
         userService.deleteAccount(id);
 
-        InOrder inOrder = inOrder(refreshTokenRepository, userRepository);
+        InOrder inOrder = inOrder(refreshTokenRepository, reviewLogRepository, cardStateRepository,
+                userFsrsParamRepository, userRepository);
         inOrder.verify(refreshTokenRepository).deleteAllByUserId(id);
+        inOrder.verify(reviewLogRepository).deleteAllByUserId(id);
+        inOrder.verify(cardStateRepository).deleteAllByUserId(id);
+        inOrder.verify(userFsrsParamRepository).deleteByUserId(id);
         inOrder.verify(userRepository).deleteById(id);
     }
 }

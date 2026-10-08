@@ -1,6 +1,10 @@
 package com.mainichi.api.domain.user.service;
 
 import com.mainichi.api.domain.auth.repository.RefreshTokenRepository;
+import com.mainichi.api.domain.study.repository.CardStateRepository;
+import com.mainichi.api.domain.study.repository.ReviewLogRepository;
+import com.mainichi.api.domain.study.repository.UserFsrsParamRepository;
+import com.mainichi.api.domain.user.entity.StudyArea;
 import com.mainichi.api.domain.user.entity.User;
 import com.mainichi.api.domain.user.exception.UserNotFoundException;
 import com.mainichi.api.domain.user.repository.UserRepository;
@@ -8,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -17,6 +22,9 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final ReviewLogRepository reviewLogRepository;
+    private final CardStateRepository cardStateRepository;
+    private final UserFsrsParamRepository userFsrsParamRepository;
 
     public record FindOrCreateResult(User user, boolean inNewUser){}
 
@@ -43,15 +51,22 @@ public class UserService {
                 .orElseThrow(UserNotFoundException::new);
     }
 
-    public void updateProfile(UUID userId, String nickname, String timezone){
+    public void updateProfile(UUID userId, String nickname, String timezone, Integer currentLevel,
+                              Set<StudyArea> studyAreas){
         User user = getById(userId);
-        user.updateProfile(nickname, timezone);
+        user.updateProfile(nickname, timezone, currentLevel);
+        if(studyAreas != null){
+            user.changeStudyAreas(studyAreas);
+        }
     }
 
     public void deleteAccount(UUID userId){
-        //todo : 나중에 deck/card_state/review_log/user_fsrs_param 까지 삭제
+        //todo : 유저가 직접 만든 deck/card 기능이 생기면 그것도 삭제
         // 유저를 참조하는 테이블(FK)을 먼저 지워야 유저 삭제가 제약 위반으로 실패하지 않는다.
         refreshTokenRepository.deleteAllByUserId(userId);
+        reviewLogRepository.deleteAllByUserId(userId);
+        cardStateRepository.deleteAllByUserId(userId);
+        userFsrsParamRepository.deleteByUserId(userId);
         userRepository.deleteById(userId);
     }
 }

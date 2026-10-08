@@ -3,6 +3,8 @@ package com.mainichi.api.domain.user.entity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -61,5 +63,31 @@ class UserTest {
 
         assertEquals("새닉네임", user.getNickname());
         assertEquals("Asia/Seoul", user.getTimezone());
+    }
+
+    @Test
+    @DisplayName("학습 영역은 기본으로 단어만 있고, 단어는 빼려고 해도 항상 포함된다")
+    void studyAreas() {
+        User user = newUser();
+        assertEquals(Set.of(StudyArea.WORD), user.getStudyAreas());
+
+        user.changeStudyAreas(Set.of(StudyArea.GRAMMAR, StudyArea.LISTENING));
+        assertEquals(Set.of(StudyArea.WORD, StudyArea.GRAMMAR, StudyArea.LISTENING), user.getStudyAreas());
+
+        user.changeStudyAreas(Set.of());
+        assertEquals(Set.of(StudyArea.WORD), user.getStudyAreas());
+    }
+
+    @Test
+    @DisplayName("학습 영역은 콤마 문자열로 저장되고 그대로 복원된다 (단어는 저장하지 않음)")
+    void studyAreaConverter() {
+        StudyAreaSetConverter converter = new StudyAreaSetConverter();
+
+        assertEquals("GRAMMAR,LISTENING", converter.convertToDatabaseColumn(Set.of(StudyArea.LISTENING, StudyArea.GRAMMAR)));
+        assertEquals("", converter.convertToDatabaseColumn(Set.of()));
+        assertEquals(Set.of(StudyArea.GRAMMAR, StudyArea.LISTENING), converter.convertToEntityAttribute("GRAMMAR,LISTENING"));
+        assertEquals(Set.of(), converter.convertToEntityAttribute(null));
+        // 예전에 저장된, 지금은 없는 영역(대화)은 건너뛴다
+        assertEquals(Set.of(StudyArea.GRAMMAR), converter.convertToEntityAttribute("GRAMMAR,CONVERSATION"));
     }
 }
