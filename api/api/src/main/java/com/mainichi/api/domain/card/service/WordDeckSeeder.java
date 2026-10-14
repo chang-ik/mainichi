@@ -38,6 +38,7 @@ public class WordDeckSeeder implements ApplicationRunner {
             "seed/words-n3.json",
             "seed/words-n2.json",
             "seed/words-n1.json",
+            "seed/grammar-basic.json",
             "seed/grammar-n5.json",
             "seed/grammar-n4.json",
             "seed/grammar-n3.json",

@@ -38,7 +38,8 @@ public class StudyController {
             @PathVariable UUID cardId,
             @Valid @RequestBody ReviewRequest request
     ) {
-        return ResponseEntity.ok(studyService.review(userId, kindOf(kind), cardId, Rating.fromValue(request.rating())));
+        return ResponseEntity.ok(studyService.review(userId, kindOf(kind), cardId, Rating.fromValue(request.rating()),
+                request.durationMs()));
     }
 
     private static StudyKind kindOf(String path) {

@@ -76,3 +76,116 @@ export interface StudyQueue {
   /** card 가 null 인데 오늘 다시 볼 학습 중 카드가 있으면 그때까지 남은 초 */
   nextDueInSeconds: number | null;
 }
+
+// ---- 독해·청해: Claude 가 만든 JLPT 형식 문제 (QuizResponse / TodayQuizResponse) ----
+
+/** API 경로 /quiz/{kind} */
+export type QuizKind = 'reading' | 'listening';
+
+export interface QuizSourceCard {
+  /** 후리가나 대괄호 표기 */
+  front: string;
+  meaning: string;
+  usage: string | null;
+  grammar: boolean;
+}
+
+export interface ListeningLine {
+  speaker: 'MALE' | 'FEMALE';
+  /** 후리가나 대괄호 표기 */
+  text: string;
+}
+
+export interface QuizQuestion {
+  /** 후리가나 대괄호 표기 */
+  question: string;
+  choices: string[];
+  /** 아래 셋은 풀기 전에는 null */
+  selectedIndex: number | null;
+  answerIndex: number | null;
+  explanation: string | null;
+}
+
+export interface Quiz {
+  id: string;
+  kind: 'READING' | 'LISTENING';
+  level: number;
+  title: string;
+  /** 독해 지문 / 청해 상황 설명. 후리가나 대괄호 표기, 문단은 빈 줄로 구분 */
+  passage: string;
+  /** 청해 대화 (독해는 빈 배열). 소리로 읽어야 해서 풀기 전에도 오지만 화면에는 풀고 나서 보여준다 */
+  script: ListeningLine[];
+  /** 한국어 해석. 풀기 전에는 null */
+  translation: string | null;
+  sourceCards: QuizSourceCard[];
+  questions: QuizQuestion[];
+  submitted: boolean;
+  correctCount: number | null;
+}
+
+export interface TodayQuiz {
+  /** 오늘 새로 배운 카드 수 (단어+문법) */
+  newCardCount: number;
+  /** 문제를 만들 수 있는 최소 카드 수 (청해는 0) */
+  minNewCards: number;
+  /** 오늘 더 만들 수 있는 문제 수 */
+  remainingToday: number;
+  /** 오늘 채점까지 끝낸 문제 수 */
+  solvedToday: number;
+  quiz: Quiz | null;
+}
+
+// ---- 통계 (StatsResponse): 날짜는 유저 시간대 기준 YYYY-MM-DD ----
+
+export type StatsDeck = 'all' | 'words' | 'grammar';
+export type StatsDays = 30 | 90 | 365;
+
+export interface StatsBucket {
+  label: string;
+  count: number;
+}
+
+export interface StatsHistogram {
+  buckets: StatsBucket[];
+  average: number | null;
+  max: number | null;
+}
+
+export interface Stats {
+  deck: StatsDeck;
+  days: StatsDays;
+  today: string;
+  todayStats: {
+    reviews: number;
+    seconds: number;
+    newCards: number;
+    learning: number;
+    review: number;
+    relearning: number;
+    again: number;
+    correctRate: number | null;
+    matureReviews: number;
+    matureCorrectRate: number | null;
+  };
+  streak: { current: number; longest: number; studiedDays: number; periodDays: number };
+  /** 최근 1년 중 복습한 날만 */
+  calendar: { date: string; count: number }[];
+  /** 기간의 하루하루 (오래된 날부터) */
+  reviews: { date: string; learning: number; review: number; relearning: number; newCards: number; seconds: number }[];
+  reviewSummary: { total: number; daysStudied: number; averagePerStudiedDay: number; averagePerDay: number; seconds: number };
+  /** due[0] = 오늘(밀린 카드 포함) */
+  forecast: { due: number[]; dueTomorrow: number; overdue: number; dailyLoad: number };
+  cardCounts: { newCards: number; learning: number; relearning: number; young: number; mature: number };
+  /** 일 */
+  intervals: StatsHistogram;
+  /** 일 */
+  stability: StatsHistogram;
+  /** % */
+  difficulty: StatsHistogram;
+  /** % */
+  retrievability: StatsHistogram;
+  hours: { hour: number; count: number; correctRate: number | null }[];
+  /** counts[0]=다시 … counts[3]=쉬움 */
+  buttons: { group: 'LEARNING' | 'YOUNG' | 'MATURE'; counts: number[]; correctRate: number | null }[];
+  retention: { label: string; youngPass: number; youngFail: number; maturePass: number; matureFail: number }[];
+}

@@ -1,6 +1,7 @@
 package com.mainichi.api.domain.user.service;
 
 import com.mainichi.api.domain.auth.repository.RefreshTokenRepository;
+import com.mainichi.api.domain.quiz.repository.QuizRepository;
 import com.mainichi.api.domain.study.repository.CardStateRepository;
 import com.mainichi.api.domain.study.repository.ReviewLogRepository;
 import com.mainichi.api.domain.study.repository.UserFsrsParamRepository;
@@ -49,6 +50,9 @@ class UserServiceTest {
 
     @Mock
     private UserFsrsParamRepository userFsrsParamRepository;
+
+    @Mock
+    private QuizRepository quizRepository;
 
     @InjectMocks
     private UserService userService;

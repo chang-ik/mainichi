@@ -9,25 +9,20 @@ import com.mainichi.api.domain.study.repository.ReviewLogRepository;
 import com.mainichi.api.domain.user.entity.User;
 import com.mainichi.api.domain.user.repository.UserRepository;
 import com.mainichi.api.global.common.JwtTokenProvider;
+import com.mainichi.api.support.MutableClock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,46 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(StudyFlowIntegrationTest.MutableClockConfig.class)
+@Import(MutableClock.Config.class)
 class StudyFlowIntegrationTest {
-
-    /** 테스트에서 시간을 앞으로 돌릴 수 있는 시계 */
-    static class MutableClock extends Clock {
-        private Instant instant = Instant.parse("2026-09-29T00:00:00Z"); // 서울 09:00
-        private final ZoneId zone = ZoneId.of("Asia/Seoul");
-
-        void advance(Duration d) {
-            instant = instant.plus(d);
-        }
-
-        void reset() {
-            instant = Instant.parse("2026-09-29T00:00:00Z");
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return zone;
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Instant instant() {
-            return instant;
-        }
-    }
-
-    @TestConfiguration
-    static class MutableClockConfig {
-        @Bean
-        @Primary
-        MutableClock testClock() {
-            return new MutableClock();
-        }
-    }
 
     @Autowired private MockMvc mockMvc;
     @Autowired private MutableClock clock;
@@ -326,6 +283,19 @@ class StudyFlowIntegrationTest {
     }
 
     @Test
+    @DisplayName("기초 단계에도 문법(기초 문법 덱) 카드가 나온다")
+    void basicGrammarDeck() throws Exception {
+        String id = cardId(grammarQueue()
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.counts.newCards").value(20))
+                .andExpect(jsonPath("$.card.usage").isNotEmpty()));
+
+        Card card = cardRepository.findById(UUID.fromString(id)).orElseThrow();
+        assertThat(card.getCardTag()).isEqualTo(Card.TAG_GRAMMAR);
+        assertThat(card.getLevel()).isZero();
+    }
+
+    @Test
     @DisplayName("단어 카드에는 usage 가 없다")
     void wordCardHasNoUsage() throws Exception {
         queue().andExpect(jsonPath("$.card.usage").value(nullValue()));
@@ -350,15 +320,6 @@ class StudyFlowIntegrationTest {
                 .andExpect(jsonPath("$.counts.newCards").value(0));
 
         queue().andExpect(jsonPath("$.counts.newCards").value(1));
-    }
-
-    @Test
-    @DisplayName("기초 단계에는 문법 카드가 없다")
-    void noGrammarForBasic() throws Exception {
-        grammarQueue()
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.counts.newCards").value(0))
-                .andExpect(jsonPath("$.card").value(nullValue()));
     }
 
     @Test
@@ -387,6 +348,6 @@ class StudyFlowIntegrationTest {
 
         wordDeckSeeder.run(null);
 
-        assertThat(cardRepository.count()).isEqualTo(before).isEqualTo(142 + 100 * 5 + (31 + 34 + 32 + 33 + 32));
+        assertThat(cardRepository.count()).isEqualTo(before).isEqualTo(142 + 100 * 5 + (31 + 31 + 34 + 32 + 33 + 32));
     }
 }

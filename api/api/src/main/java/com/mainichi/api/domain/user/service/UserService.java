@@ -1,6 +1,7 @@
 package com.mainichi.api.domain.user.service;
 
 import com.mainichi.api.domain.auth.repository.RefreshTokenRepository;
+import com.mainichi.api.domain.quiz.repository.QuizRepository;
 import com.mainichi.api.domain.study.repository.CardStateRepository;
 import com.mainichi.api.domain.study.repository.ReviewLogRepository;
 import com.mainichi.api.domain.study.repository.UserFsrsParamRepository;
@@ -25,6 +26,7 @@ public class UserService {
     private final ReviewLogRepository reviewLogRepository;
     private final CardStateRepository cardStateRepository;
     private final UserFsrsParamRepository userFsrsParamRepository;
+    private final QuizRepository quizRepository;
 
     public record FindOrCreateResult(User user, boolean inNewUser){}
 
@@ -64,6 +66,7 @@ public class UserService {
         //todo : 유저가 직접 만든 deck/card 기능이 생기면 그것도 삭제
         // 유저를 참조하는 테이블(FK)을 먼저 지워야 유저 삭제가 제약 위반으로 실패하지 않는다.
         refreshTokenRepository.deleteAllByUserId(userId);
+        quizRepository.deleteAllByUserId(userId);
         reviewLogRepository.deleteAllByUserId(userId);
         cardStateRepository.deleteAllByUserId(userId);
         userFsrsParamRepository.deleteByUserId(userId);

@@ -62,6 +62,10 @@ public class ReviewLog {
     @Column(name = "review_time", nullable = false)
     private LocalDateTime reviewTime;
 
+    /** 카드를 보고 평가하기까지 걸린 시간(ms). Anki 처럼 60초에서 자른다. 기록 전 데이터는 null */
+    @Column(name = "duration_ms")
+    private Integer durationMs;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -72,7 +76,7 @@ public class ReviewLog {
 
     @Builder
     public ReviewLog(User user, Card card, int rating, CardPhase state, double stability, double difficulty,
-                     int elapsedDays, int scheduledDays, LocalDateTime reviewTime) {
+                     int elapsedDays, int scheduledDays, LocalDateTime reviewTime, Integer durationMs) {
         this.user = user;
         this.card = card;
         this.rating = rating;
@@ -82,5 +86,6 @@ public class ReviewLog {
         this.elapsedDays = elapsedDays;
         this.scheduledDays = scheduledDays;
         this.reviewTime = reviewTime;
+        this.durationMs = durationMs;
     }
 }

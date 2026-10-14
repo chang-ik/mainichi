@@ -40,6 +40,20 @@ kakao:
   # 카카오 콘솔에 등록한 Redirect URI와 프론트가 로그인 요청에 쓴 값이 모두 이것과 완전히 같아야 한다.
   redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:5173/auth/kakao/callback}
 
+quiz:
+  # 독해·청해 문제를 만들 AI. gemini(기본, 무료 등급 있음) / claude(유료)
+  generator: ${QUIZ_GENERATOR:gemini}
+
+# 키를 비워두면 서버는 뜨지만 문제 만들기만 503 으로 막힌다.
+gemini:
+  # Google AI Studio(aistudio.google.com)에서 발급
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-3.8-flash}
+
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}
+  model: ${ANTHROPIC_MODEL:claude-opus-5-5}
+
 logging:
   level:
     org.hibernate.SQL: debug
