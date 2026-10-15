@@ -91,6 +91,8 @@ class GeminiQuizGeneratorTest {
     @DisplayName("청해: 화자(MALE/FEMALE)를 enum 으로 읽는다")
     void listening() {
         server.expect(requestTo(URL))
+                .andExpect(jsonPath("$.generationConfig.responseSchema.properties.lines.items.properties.speaker.format")
+                        .value("enum"))
                 .andExpect(jsonPath("$.generationConfig.responseSchema.properties.lines.items.properties.speaker.enum[1]")
                         .value("FEMALE"))
                 .andRespond(withSuccess(reply(Map.of(

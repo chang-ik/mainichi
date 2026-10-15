@@ -25,6 +25,7 @@ import com.mainichi.api.domain.study.repository.ReviewLogRepository;
 import com.mainichi.api.domain.user.entity.User;
 import com.mainichi.api.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +41,7 @@ import java.util.UUID;
  * 독해는 오늘 새로 배운 카드로 지문을 쓰고, 청해는 단계에 맞는 대화에 오늘 배운 카드를 섞는다.
  * 문제 생성은 Claude 응답을 기다리는 동안 DB 커넥션을 잡지 않도록 트랜잭션 밖에서 한다.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuizService {
@@ -52,6 +54,8 @@ public class QuizService {
     static final int CHOICE_COUNT = 4;
     static final int MIN_LINES = 2;
     static final int MAX_LINES = 30;
+    /** 모델 응답이 형식에 안 맞거나 일시적으로 실패하면 이만큼 다시 시도한다 */
+    static final int MAX_ATTEMPTS = 2;
 
     private final UserService userService;
     private final ReviewLogRepository reviewLogRepository;
@@ -93,10 +97,7 @@ public class QuizService {
 
         int level = JlptLevel.forStudy(user.getCurrentLevel());
         List<QuizSourceCard> sources = cards.stream().map(QuizService::toSource).toList();
-        Draft draft = switch (kind) {
-            case READING -> Draft.of(quizGenerator.generateReading(level, sources));
-            case LISTENING -> Draft.of(quizGenerator.generateListening(level, sources));
-        };
+        Draft draft = generate(kind, level, sources);
 
         Quiz quiz = quizRepository.save(Quiz.builder()
                 .user(user)
@@ -126,6 +127,21 @@ public class QuizService {
 
     // ---------------------------------------------------------------- 보조
 
+    /** 모델 응답을 받아 검증한다. 실패(서버 오류·형식 오류)는 한 번 더 시도한다. 한도·키 없음은 바로 넘긴다. */
+    private Draft generate(QuizKind kind, int level, List<QuizSourceCard> sources) {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                return switch (kind) {
+                    case READING -> Draft.of(quizGenerator.generateReading(level, sources));
+                    case LISTENING -> Draft.of(quizGenerator.generateListening(level, sources));
+                };
+            } catch (QuizGenerationException e) {
+                if (attempt >= MAX_ATTEMPTS) throw e;
+                log.info("{} 문제 생성 실패, 다시 시도 ({}/{})", kind, attempt + 1, MAX_ATTEMPTS);
+            }
+        }
+    }
+
     private Optional<Quiz> latestOf(UUID userId, QuizKind kind, StudyDay today) {
         return quizRepository.findFirstByUserIdAndKindAndCreatedTimeGreaterThanEqualOrderByCreatedTimeDesc(
                 userId, kind, today.start());
@@ -142,39 +158,54 @@ public class QuizService {
                  List<QuizQuestion> questions) {
 
         static Draft of(GeneratedReading r) {
-            if (r == null || isBlank(r.passage())) throw new QuizGenerationException();
-            return new Draft(text(r.title()), text(r.passage()), null, text(r.translation()), questions(r.questions()));
+            if (r == null) throw invalid("응답이 비어 있음");
+            return new Draft(text("title", r.title()), text("passage", r.passage()), null,
+                    text("translation", r.translation()), questions(r.questions()));
         }
 
         static Draft of(GeneratedListening l) {
-            if (l == null || l.lines() == null || l.lines().size() < MIN_LINES || l.lines().size() > MAX_LINES
-                    || l.lines().stream().anyMatch(line -> line == null || line.speaker() == null || isBlank(line.text()))) {
-                throw new QuizGenerationException();
+            if (l == null) throw invalid("응답이 비어 있음");
+            if (l.lines() == null || l.lines().size() < MIN_LINES || l.lines().size() > MAX_LINES) {
+                throw invalid("대사 수 " + (l.lines() == null ? null : l.lines().size()));
+            }
+            if (l.lines().stream().anyMatch(line -> line == null || line.speaker() == null || isBlank(line.text()))) {
+                throw invalid("화자나 대사가 빈 줄이 있음");
             }
             List<ListeningLine> script = l.lines().stream()
                     .map(line -> new ListeningLine(line.speaker(), line.text().strip()))
                     .toList();
-            return new Draft(text(l.title()), text(l.situation()), script, text(l.translation()), questions(l.questions()));
+            return new Draft(text("title", l.title()), text("situation", l.situation()), script,
+                    text("translation", l.translation()), questions(l.questions()));
         }
 
         private static List<QuizQuestion> questions(List<GeneratedQuestion> questions) {
-            if (questions == null || questions.size() != QUESTION_COUNT) throw new QuizGenerationException();
+            if (questions == null || questions.size() != QUESTION_COUNT) {
+                throw invalid("문제 수 " + (questions == null ? null : questions.size()));
+            }
             return questions.stream().map(Draft::question).toList();
         }
 
         private static QuizQuestion question(GeneratedQuestion q) {
-            if (q == null || q.choices() == null || q.choices().size() != CHOICE_COUNT
-                    || q.choices().stream().anyMatch(QuizService::isBlank)
-                    || q.answerIndex() < 0 || q.answerIndex() >= CHOICE_COUNT) {
-                throw new QuizGenerationException();
+            if (q == null) throw invalid("문제가 비어 있음");
+            if (q.choices() == null || q.choices().size() != CHOICE_COUNT
+                    || q.choices().stream().anyMatch(QuizService::isBlank)) {
+                throw invalid("보기 " + q.choices());
             }
-            return new QuizQuestion(text(q.question()), q.choices().stream().map(String::strip).toList(),
-                    q.answerIndex(), text(q.explanation()));
+            if (q.answerIndex() < 0 || q.answerIndex() >= CHOICE_COUNT) {
+                throw invalid("정답 번호 " + q.answerIndex());
+            }
+            return new QuizQuestion(text("question", q.question()), q.choices().stream().map(String::strip).toList(),
+                    q.answerIndex(), text("explanation", q.explanation()));
         }
 
-        private static String text(String s) {
-            if (isBlank(s)) throw new QuizGenerationException();
+        private static String text(String field, String s) {
+            if (isBlank(s)) throw invalid(field + " 가 비어 있음");
             return s.strip();
+        }
+
+        private static QuizGenerationException invalid(String reason) {
+            log.warn("모델 응답이 문제 형식에 맞지 않음: {}", reason);
+            return new QuizGenerationException();
         }
     }
 

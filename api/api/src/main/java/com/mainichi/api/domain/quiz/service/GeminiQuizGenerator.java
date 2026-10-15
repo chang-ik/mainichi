@@ -185,7 +185,7 @@ public class GeminiQuizGenerator implements QuizGenerator {
                     "situation", string("대화 전에 읽어 주는 상황 설명 한 문장. 일본어, 후리가나 대괄호 표기"),
                     "lines", Map.of("type", "ARRAY", "description", "대화. 남자(MALE)와 여자(FEMALE)가 번갈아 말한다",
                             "items", object(Map.of(
-                                            "speaker", Map.of("type", "STRING", "enum", List.of("MALE", "FEMALE"),
+                                            "speaker", Map.of("type", "STRING", "format", "enum", "enum", List.of("MALE", "FEMALE"),
                                                     "description", "말하는 사람"),
                                             "text", string("대사. 일본어, 후리가나 대괄호 표기")),
                                     List.of("speaker", "text"))),

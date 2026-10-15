@@ -225,6 +225,18 @@ class QuizFlowIntegrationTest {
         today("reading").andExpect(jsonPath("$.quiz").value(nullValue()));
     }
 
+    @Test
+    @DisplayName("첫 응답이 형식에 안 맞으면 한 번 더 요청해서 만든다")
+    void retriesOnce() throws Exception {
+        learnWords(3);
+        when(quizGenerator.generateReading(anyInt(), anyList())).thenReturn(reading(3), reading(4));
+
+        create("reading")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.questions[0].choices.length()").value(4));
+        verify(quizGenerator, times(2)).generateReading(anyInt(), anyList());
+    }
+
     // ---------------------------------------------------------------- 청해
 
     @Test
