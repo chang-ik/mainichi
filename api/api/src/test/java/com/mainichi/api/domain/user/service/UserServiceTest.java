@@ -1,6 +1,8 @@
 package com.mainichi.api.domain.user.service;
 
 import com.mainichi.api.domain.auth.repository.RefreshTokenRepository;
+import com.mainichi.api.domain.board.repository.CommentRepository;
+import com.mainichi.api.domain.board.repository.PostRepository;
 import com.mainichi.api.domain.quiz.repository.QuizRepository;
 import com.mainichi.api.domain.study.repository.CardStateRepository;
 import com.mainichi.api.domain.study.repository.ReviewLogRepository;
@@ -53,6 +55,12 @@ class UserServiceTest {
 
     @Mock
     private QuizRepository quizRepository;
+
+    @Mock
+    private PostRepository postRepository;
+
+    @Mock
+    private CommentRepository commentRepository;
 
     @InjectMocks
     private UserService userService;

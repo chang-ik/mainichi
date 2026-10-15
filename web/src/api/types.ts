@@ -189,3 +189,48 @@ export interface Stats {
   buttons: { group: 'LEARNING' | 'YOUNG' | 'MATURE'; counts: number[]; correctRate: number | null }[];
   retention: { label: string; youngPass: number; youngFail: number; maturePass: number; matureFail: number }[];
 }
+
+// ---- 게시판 (PostPageResponse / PostDetailResponse): 학습 단계별 ----
+
+export interface PostSummary {
+  id: string;
+  title: string;
+  /** 작성자 닉네임 */
+  author: string | null;
+  /** 서버 시각 (YYYY-MM-DDTHH:mm:ss) */
+  createdAt: string;
+  commentCount: number;
+}
+
+export interface PostPage {
+  /** 0=기초, 1~5=N1~N5 */
+  level: number;
+  posts: PostSummary[];
+  /** 0부터 */
+  page: number;
+  totalPages: number;
+  totalPosts: number;
+}
+
+export interface BoardComment {
+  id: string;
+  content: string;
+  author: string | null;
+  createdAt: string;
+  /** 내가 쓴 댓글 (삭제 버튼 표시) */
+  mine: boolean;
+}
+
+export interface PostDetail {
+  id: string;
+  level: number;
+  title: string;
+  content: string;
+  author: string | null;
+  createdAt: string;
+  /** 쓴 뒤 고쳤는지 */
+  edited: boolean;
+  /** 내가 쓴 글 (수정·삭제 버튼 표시) */
+  mine: boolean;
+  comments: BoardComment[];
+}

@@ -4,6 +4,10 @@ package com.mainichi.api.global.exception;
 import com.mainichi.api.domain.auth.exception.InvalidRefreshTokenException;
 import com.mainichi.api.domain.auth.exception.InvalidSocialTokenException;
 import com.mainichi.api.domain.auth.exception.UnsupportedProviderException;
+import com.mainichi.api.domain.board.exception.BoardLevelNotFoundException;
+import com.mainichi.api.domain.board.exception.CommentNotFoundException;
+import com.mainichi.api.domain.board.exception.NotAuthorException;
+import com.mainichi.api.domain.board.exception.PostNotFoundException;
 import com.mainichi.api.domain.quiz.exception.NotEnoughNewCardsException;
 import com.mainichi.api.domain.quiz.exception.QuizBusyException;
 import com.mainichi.api.domain.quiz.exception.QuizDailyLimitException;
@@ -93,6 +97,26 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(QuizUnavailableException.class)
     public ResponseEntity<Map<String, Object>> handleQuizUnavailable() {
         return error(HttpStatus.SERVICE_UNAVAILABLE, "QUIZ_UNAVAILABLE", "지금은 문제를 만들 수 없어요. (서버에 AI API 키가 설정되지 않음)");
+    }
+
+    @ExceptionHandler(PostNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handlePostNotFound() {
+        return error(HttpStatus.NOT_FOUND, "POST_NOT_FOUND", "글을 찾을 수 없습니다. 삭제되었을 수 있어요.");
+    }
+
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleCommentNotFound() {
+        return error(HttpStatus.NOT_FOUND, "COMMENT_NOT_FOUND", "댓글을 찾을 수 없습니다.");
+    }
+
+    @ExceptionHandler(BoardLevelNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleBoardLevelNotFound() {
+        return error(HttpStatus.NOT_FOUND, "BOARD_LEVEL_NOT_FOUND", "없는 단계의 게시판입니다.");
+    }
+
+    @ExceptionHandler(NotAuthorException.class)
+    public ResponseEntity<Map<String, Object>> handleNotAuthor() {
+        return error(HttpStatus.FORBIDDEN, "NOT_AUTHOR", "내가 쓴 글·댓글만 고치거나 지울 수 있어요.");
     }
 
     // 여기서 처리하지 않으면 /error 로 넘어가 공통 포맷이 아닌 응답이 나간다.

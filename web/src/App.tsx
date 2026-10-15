@@ -2,10 +2,13 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { Splash } from './components/Logo';
 import { ToastProvider } from './components/Toast';
+import { BoardPage } from './pages/BoardPage';
 import { HubPage } from './pages/HubPage';
 import { KakaoCallbackPage } from './pages/KakaoCallbackPage';
 import { LoginPage } from './pages/LoginPage';
 import { NicknameSetupPage } from './pages/NicknameSetupPage';
+import { PostPage } from './pages/PostPage';
+import { PostWritePage } from './pages/PostWritePage';
 import { QuizPage } from './pages/QuizPage';
 import { StatsPage } from './pages/StatsPage';
 import { StudyPage } from './pages/StudyPage';
@@ -40,6 +43,10 @@ export default function App() {
               <Route path="/study/reading" element={<QuizPage key="reading" kind="reading" />} />
               <Route path="/study/listening" element={<QuizPage key="listening" kind="listening" />} />
               <Route path="/stats" element={<StatsPage />} />
+              <Route path="/board" element={<BoardPage />} />
+              <Route path="/board/write" element={<PostWritePage key="write" />} />
+              <Route path="/board/posts/:postId" element={<PostPage />} />
+              <Route path="/board/posts/:postId/edit" element={<PostWritePage key="edit" />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
