@@ -9,10 +9,10 @@ import { StudyPickerModal } from '../components/StudyPickerModal';
 import { levelName } from '../utils/level';
 import { selectedAreas } from '../utils/studyArea';
 
-// 회의록 기준 3개 메뉴. 학습하기(단어)만 먼저 열고, 통계·게시판은 아직 "준비 중".
+// 회의록 기준 3개 메뉴.
 const OTHER_MENUS = [
-  { glyph: '録', title: '통계', desc: '연속 학습일과 학습 기록을 확인해요', variant: 'tinted' },
-  { glyph: '話', title: '게시판', desc: '같은 단계를 공부하는 사람들과 이야기해요', variant: '' },
+  { glyph: '録', title: '통계', desc: '연속 학습일과 학습 기록을 확인해요', variant: 'tinted', path: '/stats' },
+  { glyph: '話', title: '게시판', desc: '같은 단계를 공부하는 사람들과 이야기해요', variant: '', path: '/board' },
 ] as const;
 
 function studyDesc(queue: StudyQueue | null): string {
@@ -70,8 +70,14 @@ export function HubPage() {
             <span className="desc">{studyDesc(queue)}</span>
           </button>
           {OTHER_MENUS.map((m) => (
-            <button key={m.title} type="button" className={`card ${m.variant}`} disabled>
-              <span className="badge">준비 중</span>
+            <button
+              key={m.title}
+              type="button"
+              className={`card ${m.variant}`}
+              disabled={!m.path}
+              onClick={() => m.path && navigate(m.path)}
+            >
+              {!m.path && <span className="badge">준비 중</span>}
               <span className="glyph">{m.glyph}</span>
               <span className="title">{m.title}</span>
               <span className="desc">{m.desc}</span>

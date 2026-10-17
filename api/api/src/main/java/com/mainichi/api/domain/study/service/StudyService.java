@@ -5,6 +5,7 @@ import com.mainichi.api.domain.card.entity.JlptLevel;
 import com.mainichi.api.domain.card.entity.WordBack;
 import com.mainichi.api.domain.card.repository.CardRepository;
 import com.mainichi.api.domain.card.service.WordBackCodec;
+import com.mainichi.api.domain.study.StudyDay;
 import com.mainichi.api.domain.study.StudyKind;
 import com.mainichi.api.domain.study.controller.rqrs.StudyCardResponse;
 import com.mainichi.api.domain.study.controller.rqrs.StudyQueueResponse;
@@ -29,11 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.DateTimeException;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
@@ -52,9 +50,11 @@ public class StudyService {
     /** 다른 카드가 없을 때 이 시간 안에 돌아올 학습 중 카드는 미리 보여준다 (Anki 의 learn ahead limit). */
     static final Duration LEARN_AHEAD = Duration.ofMinutes(20);
 
+    /** 한 장에 걸린 시간은 이 값에서 자른다 (Anki 의 maximum answer seconds) */
+    static final long MAX_ANSWER_MILLIS = 60_000;
+
     private static final Set<CardPhase> LEARNING_PHASES = EnumSet.of(CardPhase.LEARNING, CardPhase.RELEARNING);
     private static final Set<CardPhase> REVIEW_PHASE = EnumSet.of(CardPhase.REVIEW);
-    private static final ZoneId FALLBACK_ZONE = ZoneId.of("Asia/Seoul");
 
     private final UserService userService;
     private final CardRepository cardRepository;
@@ -68,8 +68,12 @@ public class StudyService {
         return buildQueue(user, kind, paramsOf(user), LocalDateTime.now(clock));
     }
 
-    /** 카드 한 장을 평가하고, 이어서 공부할 같은 종류의 다음 카드를 돌려준다. */
-    public StudyQueueResponse review(UUID userId, StudyKind kind, UUID cardId, Rating rating) {
+    /**
+     * 카드 한 장을 평가하고, 이어서 공부할 같은 종류의 다음 카드를 돌려준다.
+     *
+     * @param durationMs 카드를 보고 평가하기까지 걸린 시간. 모르면 null
+     */
+    public StudyQueueResponse review(UUID userId, StudyKind kind, UUID cardId, Rating rating, Long durationMs) {
         User user = userService.getById(userId);
         Card card = cardRepository.findById(cardId)
                 .filter(c -> kind.cardTag().equals(c.getCardTag()))
@@ -100,6 +104,7 @@ public class StudyService {
                 .elapsedDays(outcome.elapsedDays())
                 .scheduledDays(outcome.scheduledDays())
                 .reviewTime(now)
+                .durationMs(durationMs == null ? null : (int) Math.min(durationMs, MAX_ANSWER_MILLIS))
                 .build());
 
         return buildQueue(user, kind, params, now);
@@ -127,7 +132,7 @@ public class StudyService {
         UUID userId = user.getId();
         int level = JlptLevel.forStudy(user.getCurrentLevel());
         String tag = kind.cardTag();
-        DayWindow today = todayOf(user, now);
+        StudyDay today = StudyDay.of(user, now, clock.getZone());
 
         long introducedToday = reviewLogRepository.countSince(userId, tag, CardPhase.NEW, today.start());
         long reviewedToday = reviewLogRepository.countSince(userId, tag, CardPhase.REVIEW, today.start());
@@ -207,29 +212,5 @@ public class StudyService {
     private UserFsrsParam paramsOf(User user) {
         return userFsrsParamRepository.findByUserId(user.getId())
                 .orElseGet(() -> userFsrsParamRepository.save(UserFsrsParam.defaultsFor(user)));
-    }
-
-    /** 유저 시간대 기준 "오늘"을 서버 시간(LocalDateTime) 범위로 바꾼다. */
-    private DayWindow todayOf(User user, LocalDateTime now) {
-        ZoneId userZone = zoneOf(user);
-        ZoneId serverZone = clock.getZone();
-        LocalDate today = now.atZone(serverZone).withZoneSameInstant(userZone).toLocalDate();
-        LocalDateTime start = today.atStartOfDay(userZone).withZoneSameInstant(serverZone).toLocalDateTime();
-        LocalDateTime end = today.plusDays(1).atStartOfDay(userZone).withZoneSameInstant(serverZone).toLocalDateTime();
-        return new DayWindow(start, end);
-    }
-
-    private static ZoneId zoneOf(User user) {
-        try {
-            return ZoneId.of(user.getTimezone());
-        } catch (DateTimeException | NullPointerException e) {
-            return FALLBACK_ZONE;
-        }
-    }
-
-    private record DayWindow(LocalDateTime start, LocalDateTime endExclusive) {
-        LocalDateTime lastMoment() {
-            return endExclusive.minusNanos(1);
-        }
     }
 }

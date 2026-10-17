@@ -46,6 +46,8 @@ export function StudyPage({ kind }: Props) {
   const [error, setError] = useState('');
 
   const pressTimer = useRef<number | undefined>(undefined);
+  /** 지금 카드를 보여준 시각. 평가까지 걸린 시간을 통계로 보낸다 */
+  const shownAt = useRef(Date.now());
   const longPressed = useRef(false);
 
   useEffect(() => {
@@ -55,13 +57,17 @@ export function StudyPage({ kind }: Props) {
 
   const card = queue?.card ?? null;
 
+  useEffect(() => {
+    shownAt.current = Date.now();
+  }, [card?.id]);
+
   const grade = useCallback(
     async (rating: Rating) => {
       if (!card || !flipped || busy) return;
       setBusy(true);
       setError('');
       try {
-        const next = await studyApi.review(kind, card.id, rating);
+        const next = await studyApi.review(kind, card.id, rating, Date.now() - shownAt.current);
         setQueue(next);
         setDone((n) => n + 1);
         setFlipped(false);
@@ -238,9 +244,7 @@ export function StudyPage({ kind }: Props) {
               <p className="sub">
                 {done > 0
                   ? `오늘 ${done}장을 공부했어요.`
-                  : isGrammar && user?.currentLevel === 0
-                    ? '기초 단계에는 문법 카드가 없어요. 학습 변경에서 N5 이상을 골라 주세요.'
-                    : '지금은 공부할 카드가 없어요.'}
+                  : '지금은 공부할 카드가 없어요.'}
                 {queue.nextDueInSeconds != null &&
                   ` ${formatInterval(queue.nextDueInSeconds)} 뒤에 다시 볼 카드가 있어요.`}
               </p>

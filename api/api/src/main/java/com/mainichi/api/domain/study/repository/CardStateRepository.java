@@ -1,5 +1,6 @@
 package com.mainichi.api.domain.study.repository;
 
+import com.mainichi.api.domain.stats.service.CardStateRow;
 import com.mainichi.api.domain.study.entity.CardState;
 import com.mainichi.api.domain.study.fsrs.CardPhase;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +45,15 @@ public interface CardStateRepository extends JpaRepository<CardState, UUID> {
             """)
     Optional<LocalDateTime> findEarliestDue(@Param("userId") UUID userId, @Param("tag") String tag,
                                             @Param("level") int level, @Param("states") Collection<CardPhase> states);
+
+    /** 통계용: tags 카드의 학습 상태 전부 */
+    @Query("""
+            select new com.mainichi.api.domain.stats.service.CardStateRow(
+                s.state, s.due, s.stability, s.difficulty, s.scheduledDays, s.lastReview)
+            from CardState s
+            where s.user.id = :userId and s.card.cardTag in :tags
+            """)
+    List<CardStateRow> findRows(@Param("userId") UUID userId, @Param("tags") Collection<String> tags);
 
     @Modifying
     @Query("delete from CardState s where s.user.id = :userId")

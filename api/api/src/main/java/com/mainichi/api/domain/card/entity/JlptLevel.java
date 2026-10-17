@@ -16,7 +16,7 @@ public final class JlptLevel {
     }
 
     /**
-     * 학습에 쓸 단계. 기초(0)는 가나 덱(문법 덱은 없음), 1~5 는 해당 JLPT 덱. 범위를 벗어난 값은 N5 로 본다.
+     * 학습에 쓸 단계. 기초(0)는 가나·기초 문법 덱, 1~5 는 해당 JLPT 덱. 범위를 벗어난 값은 N5 로 본다.
      */
     public static int forStudy(Integer currentLevel) {
         return currentLevel != null && isValid(currentLevel) ? currentLevel : N5;
